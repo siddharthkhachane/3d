@@ -8,6 +8,27 @@
     html, body { margin: 0; height: 100%; background: #05060f; overflow: hidden; font-family: system-ui, sans-serif; color: #e8f6ff; }
     #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
     #hud, #menu { position: fixed; inset: 0; pointer-events: none; }
+    #hud { --cyan: #26e8ff; --good: #5dffa0; --bad: #ff5d7a; text-shadow: 0 0 12px rgba(0, 0, 0, 0.8); font-variant-numeric: tabular-nums; }
+    .hud-top { position: absolute; top: 16px; left: 0; right: 0; text-align: center; }
+    .hud-time { font-size: clamp(32px, 6vw, 56px); font-weight: 700; letter-spacing: 0.02em; }
+    .hud-best { font-size: clamp(13px, 2vw, 18px); opacity: 0.75; min-height: 1.2em; }
+    .hud-target { font-size: clamp(12px, 1.8vw, 16px); color: var(--cyan); min-height: 1.2em; }
+    .hud-delta, .hud-pop { position: absolute; left: 0; right: 0; text-align: center; opacity: 0; transition: opacity 0.25s; }
+    .hud-delta { top: 34%; font-size: clamp(36px, 7vw, 68px); font-weight: 800; }
+    .hud-pop { top: 44%; font-size: clamp(18px, 3vw, 30px); font-weight: 700; letter-spacing: 0.08em; }
+    .hud-delta.show, .hud-pop.show { opacity: 1; }
+    .good { color: var(--good); } .bad { color: var(--bad); } .neutral { color: #fff; }
+    .hud-wrong { position: absolute; top: 28%; left: 0; right: 0; text-align: center; font-size: 36px; font-weight: 800; color: var(--bad); opacity: 0; }
+    .hud-wrong.show { opacity: 1; }
+    .hud-speed { position: absolute; right: 20px; bottom: 20px; font-size: clamp(30px, 5vw, 48px); font-weight: 700; }
+    .hud-speed small { font-size: 14px; margin-left: 6px; opacity: 0.7; }
+    .hud-charge { position: absolute; left: 50%; bottom: 24px; width: min(320px, 50vw); height: 8px; transform: translateX(-50%); background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
+    .hud-charge-fill { height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); border-radius: 4px; background: #7a86ff; }
+    .hud-charge-fill[data-tier="1"] { background: var(--cyan); }
+    .hud-charge-fill[data-tier="2"] { background: #ff9a3c; box-shadow: 0 0 12px #ff9a3c; }
+    .hud-charge i { position: absolute; top: -3px; width: 2px; height: 14px; background: rgba(255, 255, 255, 0.6); }
+    .hud-restart { display: none; position: absolute; left: 16px; bottom: 16px; width: 48px; height: 48px; border-radius: 24px; border: 0; font-size: 24px; color: #fff; background: rgba(255, 255, 255, 0.15); pointer-events: auto; }
+    @media (pointer: coarse) { .hud-restart { display: block; } }
   </style>
 </head>
 <body>
