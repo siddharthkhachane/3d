@@ -2,6 +2,8 @@
 
 A short-lap racing game in the browser. Beat your own ghost, earn medals, race a friend's ghost from a link. Built with plain JS and three.js, with no backend and no asset files.
 
+**Play it: https://siddharthkhachane.github.io/3d/**
+
 ## Run
 
 ```bash
