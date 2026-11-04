@@ -11,6 +11,8 @@ import { createRenderer } from './render/renderer.js';
 import { createWorld } from './render/world.js';
 import { createCarMesh } from './render/carMesh.js';
 import { createChaseCamera } from './render/chaseCamera.js';
+import { createFx } from './render/fx.js';
+import { createAudio } from './audio/audio.js';
 import { createHud } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
 import { formatTime } from './ui/format.js';
@@ -42,6 +44,11 @@ function start() {
 
   const camera = createChaseCamera(renderer.camera);
   const input = createInput(window);
+  const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fx = createFx(renderer.scene, renderer.camera, { reducedMotion });
+  const audio = createAudio();
+  audio.setMuted(store.getSettings().muted);
+  for (const type of ['keydown', 'pointerdown', 'touchstart']) window.addEventListener(type, () => audio.unlock());
   const carMesh = createCarMesh({ color: 0x00e5ff });
   const ghostMesh = createCarMesh({ ghost: true });
   ghostMesh.visible = false;
@@ -86,6 +93,8 @@ function start() {
     wrongTime = 0;
     targetFor = undefined;
     camera.snap(poseAt(0));
+    fx.reset();
+    audio.reset();
   }
 
   function restart() {
@@ -94,6 +103,8 @@ function start() {
     camera.snap(poseAt(0));
     ghostMesh.visible = false;
     wrongTime = 0;
+    fx.reset();
+    audio.reset();
   }
 
   function trackRows() {
@@ -115,7 +126,12 @@ function start() {
     onResume() { ui = null; menu.hide(); },
     onRestart() { restart(); ui = null; menu.hide(); },
     onTracks() { showTracks(); },
-    onToggleMute() { store.setSettings({ muted: !store.getSettings().muted }); menu.showPause(store.getSettings().muted); },
+    onToggleMute() {
+      const muted = !store.getSettings().muted;
+      store.setSettings({ muted });
+      audio.setMuted(muted);
+      menu.showPause(muted);
+    },
     onDismissControls() { store.setSettings({ seenControls: true }); },
   });
   function showTracks() { ui = 'tracks'; menu.showTracks(trackRows(), { showControls: !store.getSettings().seenControls }); }
@@ -124,6 +140,8 @@ function start() {
 
   function onEvent(e) {
     hud.event(e);
+    fx.event(e);
+    audio.event(e);
     const { world } = current;
     if (e.type === 'checkpoint') world.flashGate(e.index);
     else if (e.type === 'lap') { world.flashGate(0); world.resetPylons(); }
@@ -163,7 +181,12 @@ function start() {
 
     for (const name of input.consumePressed()) {
       if (name === 'restart' && ui === null) { restart(); acc = 0; }
-      else if (name === 'pause') {
+      else if (name === 'mute') {
+        const muted = !store.getSettings().muted;
+        store.setSettings({ muted });
+        audio.setMuted(muted);
+        if (ui === 'pause') menu.showPause(muted);
+      } else if (name === 'pause') {
         if (ui === null) { ui = 'pause'; menu.showPause(store.getSettings().muted); }
         else if (ui === 'pause') { ui = null; menu.hide(); }
       }
@@ -208,6 +231,9 @@ function start() {
     });
 
     camera.update({ ...pose }, dt);
+    fx.update({ ...pose, drifting: sim.car.drifting, surface: sim.surface }, dt);
+    audio.update({ speed: pose.speed, boosting: pose.boosting, drifting: sim.car.drifting, charge: sim.car.charge });
+    if (ui === null && !document.hidden) audio.resume(); else audio.suspend();
     world.update(now);
     renderer.render();
 
