@@ -58,8 +58,9 @@ export function createHud(root, { onRestart = () => {} } = {}) {
         else flash('delta', formatDelta(e.deltaMs), e.deltaMs <= 0 ? 'good' : 'bad', 1500);
       } else if (e.type === 'nearMiss') {
         flash('pop', 'NEAR MISS', 'good', 900);
-      } else if (e.type === 'lap' && e.isBest) {
-        flash('pop', `NEW BEST ${formatTime(e.timeMs)}`, 'good', 2200);
+      } else if (e.type === 'lap') {
+        if (e.medalUpgraded) flash('pop', `${e.medal.toUpperCase()} MEDAL  ${formatTime(e.timeMs)}`, 'good', 2600);
+        else if (e.isBest) flash('pop', `NEW BEST ${formatTime(e.timeMs)}`, 'good', 2200);
       }
     },
     setVisible(visible) { root.style.display = visible ? '' : 'none'; },

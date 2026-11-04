@@ -6,11 +6,17 @@ import { encodeGhost, decodeGhost } from '../src/sim/ghost.js';
 const track = generateTrack('neon-1');
 
 function memoryStore(initial = null) {
-  let best = initial;
+  let best = initial, medal = null;
   const store = {
     records: 0,
     getBest: () => best,
-    recordLap(_id, rec) { store.records++; best = { timeMs: rec.timeMs, ghostCode: rec.ghostCode }; return { unlockedNow: [] }; },
+    getMedal: () => medal,
+    recordLap(_id, rec) {
+      store.records++;
+      best = { timeMs: rec.timeMs, ghostCode: rec.ghostCode };
+      if (rec.medal) medal = rec.medal;
+      return { unlockedNow: [] };
+    },
   };
   return store;
 }
@@ -97,4 +103,17 @@ test('a lap too long for a ghost still counts without crashing', () => {
   expect(s.bestMs).toBe(lap.timeMs);
   expect(s.best).toBeNull();
   expect(store.getBest('neon-1').ghostCode).toBeNull();
+});
+test('reaching a medal emits medalUpgraded once, and an equal lap does not repeat it', () => {
+  const store = memoryStore();
+  const first = lapOf(driveUntil(createSession({ trackId: 'neon-1', track, store }), isLap));
+  expect(first.medal).toBe('gold');   // the bot lap defines the medal scale, so it lands just inside gold
+  expect(first.medalUpgraded).toBe(true);
+  const second = lapOf(driveUntil(createSession({ trackId: 'neon-1', track, store }), isLap));
+  expect(second.medal).toBe('gold');
+  expect(second.medalUpgraded).toBe(false);
+});
+test('nextTarget names the next medal for the saved best', () => {
+  const s = createSession({ trackId: 'neon-1', track, store: memoryStore() });
+  expect(s.nextTarget().name).toBe('bronze');
 });
