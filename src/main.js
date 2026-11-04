@@ -19,6 +19,8 @@ import { formatTime } from './ui/format.js';
 import { createStore } from './meta/store.js';
 import { medalTimes, nextMedal } from './meta/medals.js';
 import { FIXED_TRACKS, dailyTrackId } from './meta/daily.js';
+import { COLORS, TRAILS, isUnlocked } from './meta/unlocks.js';
+import { makeShareUrl, parseShareHash } from './meta/share.js';
 
 const debug = new URLSearchParams(location.search).has('debug');
 const canvas = document.getElementById('game');
@@ -84,10 +86,11 @@ function start() {
     };
   }
 
-  function loadTrack(id) {
+  function loadTrack(id, friendGhost = null) {
     if (current) current.world.dispose();
     const { track, times } = trackInfo(id);
-    const session = createSession({ trackId: id, track, store, times });
+    const session = createSession({ trackId: id, track, store, times, friendGhost });
+    ghostMesh.userData.setColor(friendGhost ? 0xff2bd6 : 0x40f0ff);
     current = { id, track, session, sim: session.sim, world: createWorld(renderer.scene, track) };
     ghostMesh.visible = false;
     wrongTime = 0;
@@ -108,16 +111,48 @@ function start() {
   }
 
   function trackRows() {
-    return FIXED_TRACKS.map((id) => {
+    return [...FIXED_TRACKS, dailyTrackId()].map((id) => {
       const best = store.getBest(id);
       const target = nextMedal(best ? best.timeMs : null, trackInfo(id).times ?? {});
       return {
         id, name: trackName(id),
         bestMs: best ? best.timeMs : null,
         medal: store.getMedal(id),
+        canShare: !!(best && best.ghostCode),
         target: target ? `${capitalize(target.name)} in ${formatTime(target.timeMs)}` : '',
       };
     });
+  }
+
+  function activeCosmetic(list, id) {
+    const points = store.totalPoints();
+    return list.find((c) => c.id === id && isUnlocked(c, points)) ?? list[0];
+  }
+  function applyCosmetics() {
+    const settings = store.getSettings();
+    carMesh.userData.setColor(activeCosmetic(COLORS, settings.color).hex);
+    fx.setTrail(activeCosmetic(TRAILS, settings.trail).id);
+  }
+  function cosmeticsView() {
+    const settings = store.getSettings(), points = store.totalPoints();
+    const view = (list, id) => list.map((c) => ({
+      id: c.id, label: capitalize(c.id), hex: c.hex,
+      selected: c.id === activeCosmetic(list, id).id, needs: Math.max(0, c.points - points),
+    }));
+    return { points, colors: view(COLORS, settings.color), trails: view(TRAILS, settings.trail) };
+  }
+  const showPause = () => menu.showPause(store.getSettings().muted, cosmeticsView());
+
+  async function shareTrack(id) {
+    const best = store.getBest(id);
+    const url = best && best.ghostCode ? makeShareUrl(location.href, id, best.ghostCode) : null;
+    if (!url) { showTracks({ notice: "That ghost is too big to share.", error: true }); return; }
+    try {
+      await navigator.clipboard.writeText(url);
+      showTracks({ notice: 'Link copied' });
+    } catch {
+      showTracks({ shareUrl: url });
+    }
   }
 
   let ui = 'tracks';   // 'tracks' | 'pause' | null
@@ -126,15 +161,21 @@ function start() {
     onResume() { ui = null; menu.hide(); },
     onRestart() { restart(); ui = null; menu.hide(); },
     onTracks() { showTracks(); },
+    onShare(id) { shareTrack(id); },
+    onPickColor(id) { store.setSettings({ color: id }); applyCosmetics(); showPause(); },
+    onPickTrail(id) { store.setSettings({ trail: id }); applyCosmetics(); showPause(); },
     onToggleMute() {
       const muted = !store.getSettings().muted;
       store.setSettings({ muted });
       audio.setMuted(muted);
-      menu.showPause(muted);
+      showPause();
     },
     onDismissControls() { store.setSettings({ seenControls: true }); },
   });
-  function showTracks() { ui = 'tracks'; menu.showTracks(trackRows(), { showControls: !store.getSettings().seenControls }); }
+  function showTracks(extras = {}) {
+    ui = 'tracks';
+    menu.showTracks(trackRows(), { showControls: !store.getSettings().seenControls, ...extras });
+  }
 
   const hud = createHud(document.getElementById('hud'), { onRestart: restart });
 
@@ -163,8 +204,17 @@ function start() {
     };
   }
 
-  loadTrack(FIXED_TRACKS[0]);
-  showTracks();
+  applyCosmetics();
+  const sharedHash = location.hash.startsWith('#r=');
+  const shared = sharedHash ? parseShareHash(location.hash) : null;
+  loadTrack(shared ? shared.trackId : FIXED_TRACKS[0], shared ? shared.ghost : null);
+  if (shared) {
+    ui = null;
+    hud.event({ type: 'banner', text: `Beat ${formatTime(shared.ghost.timeMs)}` });
+  } else {
+    showTracks(sharedHash ? { notice: 'That race link is broken', error: true } : {});
+  }
+  if (sharedHash) history.replaceState(null, '', location.pathname + location.search);
 
   let acc = 0, last = performance.now() / 1000;
 
@@ -185,9 +235,9 @@ function start() {
         const muted = !store.getSettings().muted;
         store.setSettings({ muted });
         audio.setMuted(muted);
-        if (ui === 'pause') menu.showPause(muted);
+        if (ui === 'pause') showPause();
       } else if (name === 'pause') {
-        if (ui === null) { ui = 'pause'; menu.showPause(store.getSettings().muted); }
+        if (ui === null) { ui = 'pause'; showPause(); }
         else if (ui === 'pause') { ui = null; menu.hide(); }
       }
     }

@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
-const ghostMaterial = () => new THREE.MeshBasicMaterial({ color: 0x40f0ff, transparent: true, opacity: 0.35, depthWrite: false });
+const ghostMaterial = (color) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false });
 
-export function createCarMesh({ color = 0x00e5ff, ghost = false } = {}) {
+export function createCarMesh({ color, ghost = false } = {}) {
+  color ??= ghost ? 0x40f0ff : 0x00e5ff;
   const group = new THREE.Group();
-  const lit = ghost ? ghostMaterial() : new THREE.MeshLambertMaterial({ color: new THREE.Color(color).multiplyScalar(0.55) });
+  const lit = ghost ? ghostMaterial(color) : new THREE.MeshLambertMaterial({ color: new THREE.Color(color).multiplyScalar(0.55) });
   const dark = ghost ? lit : new THREE.MeshLambertMaterial({ color: 0x101423 });
   const glow = (c) => (ghost ? lit : new THREE.MeshBasicMaterial({ color: new THREE.Color(c) }));
   const part = (w, h, d, mat, x, y, z) => {
@@ -25,5 +26,11 @@ export function createCarMesh({ color = 0x00e5ff, ghost = false } = {}) {
   }
   part(1.6, 0.12, 0.08, glow(new THREE.Color(4, 0.15, 0.3)), 0, 0.7, -2.12);   // tail light
   part(1.5, 0.08, 0.08, glow(new THREE.Color(2.5, 2.5, 2)), 0, 0.6, 2.12);     // headlight bar
+  group.userData.setColor = (c) => {
+    const col = new THREE.Color(c);
+    if (ghost) { lit.color.copy(col); return; }
+    lit.color.copy(col).multiplyScalar(0.55);
+    stripe.color.copy(col).multiplyScalar(2.5);
+  };
   return group;
 }

@@ -30,7 +30,7 @@
     #menu.open { pointer-events: auto; background: rgba(5, 6, 15, 0.72); display: grid; place-items: center; }
     .menu-panel { width: min(460px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 10px; }
     .menu-title { margin: 0 0 8px; text-align: center; font-size: 28px; letter-spacing: 0.18em; color: #26e8ff; text-shadow: 0 0 18px #26e8ff; }
-    .menu-notice { margin: 0; text-align: center; color: #ff5d7a; }
+    .menu-notice { margin: 0; text-align: center; color: #26e8ff; }
     .menu-btn, .menu-row { font: inherit; color: inherit; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(38, 232, 255, 0.35); border-radius: 10px; padding: 12px 16px; cursor: pointer; text-align: left; }
     .menu-btn:hover, .menu-row:hover, .menu-btn:focus-visible, .menu-row:focus-visible { background: rgba(38, 232, 255, 0.18); outline: none; }
     .menu-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 12px; align-items: baseline; }
@@ -39,6 +39,17 @@
     .row-target { grid-column: 1 / -1; font-size: 13px; color: #26e8ff; min-height: 1.1em; }
     .row-medal { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.9; }
     .row-medal.bronze { color: #d89a5a; } .row-medal.silver { color: #cfd6e4; } .row-medal.gold { color: #ffd34d; } .row-medal.neon { color: #5dffa0; text-shadow: 0 0 8px #5dffa0; }
+    .menu-notice.error { color: #ff5d7a; }
+    .menu-row-wrap { display: flex; gap: 8px; align-items: stretch; }
+    .menu-row-wrap .menu-row { flex: 1; }
+    .menu-share-btn { white-space: nowrap; font-size: 13px; }
+    .menu-share { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid #26e8ff; background: rgba(0, 0, 0, 0.4); color: inherit; }
+    .cosmetics { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .cosmetics-title { width: 48px; font-size: 13px; opacity: 0.7; }
+    .cosmetic { font: inherit; font-size: 13px; color: inherit; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+    .cosmetic[style*="--swatch"] { border-left: 6px solid var(--swatch); }
+    .cosmetic.selected { border-color: #26e8ff; background: rgba(38, 232, 255, 0.22); }
+    .cosmetic:disabled { opacity: 0.4; cursor: not-allowed; }
     .menu-controls { margin: 4px 0 0; font-size: 13px; opacity: 0.75; text-align: center; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
     .menu-link { font: inherit; color: #26e8ff; background: none; border: 0; cursor: pointer; text-decoration: underline; }
     .hud-restart { display: none; position: absolute; left: 16px; bottom: 16px; width: 48px; height: 48px; border-radius: 24px; border: 0; font-size: 24px; color: #fff; background: rgba(255, 255, 255, 0.15); pointer-events: auto; }

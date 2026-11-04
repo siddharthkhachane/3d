@@ -24,12 +24,22 @@ export function createMenu(root, handlers) {
   function open() { root.classList.add('open'); panel.replaceChildren(); }
 
   return {
-    // rows: [{ id, name, bestMs, medal, target }]; extras: { showControls, notice }
-    showTracks(rows, { showControls = false, notice = '' } = {}) {
+    // rows: [{ id, name, bestMs, medal, target, canShare }]; extras: { showControls, notice, error, shareUrl }
+    showTracks(rows, { showControls = false, notice = '', error = false, shareUrl = '' } = {}) {
       open();
       panel.append(el('h1', 'menu-title', 'NEON TIME TRIAL'));
-      if (notice) panel.append(el('p', 'menu-notice', notice));
+      if (notice) panel.append(el('p', error ? 'menu-notice error' : 'menu-notice', notice));
+      if (shareUrl) {
+        const field = el('input', 'menu-share');
+        field.readOnly = true;
+        field.value = shareUrl;
+        field.setAttribute('aria-label', 'Share link');
+        panel.append(el('p', 'menu-notice', 'Copy this link to share your ghost:'), field);
+        field.focus();
+        field.select();
+      }
       for (const row of rows) {
+        const wrap = el('div', 'menu-row-wrap');
         const b = el('button', 'menu-row');
         b.type = 'button';
         b.append(el('span', 'row-name', row.name));
@@ -37,7 +47,9 @@ export function createMenu(root, handlers) {
         b.append(el('span', 'row-best', row.bestMs === null ? 'no time yet' : formatTime(row.bestMs)));
         b.append(el('span', 'row-target', row.target || ''));
         b.addEventListener('click', () => { b.blur(); handlers.onSelect(row.id); });
-        panel.append(b);
+        wrap.append(b);
+        if (row.canShare) wrap.append(button('Share ghost', () => handlers.onShare(row.id), 'menu-btn menu-share-btn'));
+        panel.append(wrap);
       }
       if (showControls) {
         const line = el('div', 'menu-controls');
@@ -45,13 +57,29 @@ export function createMenu(root, handlers) {
         panel.append(line);
       }
     },
-    showPause(muted) {
+    // cosmetics: { points, colors, trails } with items { id, label, hex?, selected, needs } (needs > 0 means locked)
+    showPause(muted, cosmetics) {
       open();
       panel.append(el('h1', 'menu-title', 'PAUSED'));
       panel.append(button('Resume', handlers.onResume));
       panel.append(button('Restart', handlers.onRestart));
       panel.append(button('Tracks', handlers.onTracks));
       panel.append(button(muted ? 'Sound: off' : 'Sound: on', handlers.onToggleMute));
+      if (cosmetics) {
+        panel.append(el('p', 'menu-controls', `Medal points: ${cosmetics.points}`));
+        for (const [title, items, pick] of [['Car', cosmetics.colors, handlers.onPickColor], ['Trail', cosmetics.trails, handlers.onPickTrail]]) {
+          const group = el('div', 'cosmetics');
+          group.append(el('span', 'cosmetics-title', title));
+          for (const item of items) {
+            const locked = item.needs > 0;
+            const b = button(locked ? `${item.label} · ${item.needs} pts` : item.label, () => pick(item.id), `cosmetic${item.selected ? ' selected' : ''}`);
+            b.disabled = locked;
+            if (item.hex !== undefined) b.style.setProperty('--swatch', `#${item.hex.toString(16).padStart(6, '0')}`);
+            group.append(b);
+          }
+          panel.append(group);
+        }
+      }
       panel.append(el('p', 'menu-controls', CONTROLS));
     },
     hide() {

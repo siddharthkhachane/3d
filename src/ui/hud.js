@@ -59,8 +59,16 @@ export function createHud(root, { onRestart = () => {} } = {}) {
       } else if (e.type === 'nearMiss') {
         flash('pop', 'NEAR MISS', 'good', 900);
       } else if (e.type === 'lap') {
-        if (e.medalUpgraded) flash('pop', `${e.medal.toUpperCase()} MEDAL  ${formatTime(e.timeMs)}`, 'good', 2600);
-        else if (e.isBest) flash('pop', `NEW BEST ${formatTime(e.timeMs)}`, 'good', 2200);
+        let msg = null;
+        if (e.medalUpgraded) msg = `${e.medal.toUpperCase()} MEDAL  ${formatTime(e.timeMs)}`;
+        else if (e.isBest) msg = `NEW BEST ${formatTime(e.timeMs)}`;
+        if (e.unlockedNow?.length) {
+          const unlocked = `UNLOCKED ${e.unlockedNow.map((i) => i.id.toUpperCase()).join(', ')}`;
+          msg = msg ? `${msg}  ·  ${unlocked}` : unlocked;
+        }
+        if (msg) flash('pop', msg, 'good', 3000);
+      } else if (e.type === 'banner') {
+        flash('pop', e.text, 'neutral', 3500);
       }
     },
     setVisible(visible) { root.style.display = visible ? '' : 'none'; },

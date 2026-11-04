@@ -69,3 +69,9 @@ test('pruning removes old daily ghosts but keeps points', () => {
   expect(s.getBest('neon-1').ghostCode).toBe('fixed');
   expect(s.totalPoints()).toBe(before);
 });
+test('recordLap reports cosmetics unlocked by the new points', () => {
+  const s = createStore(fakeStorage());
+  expect(s.recordLap('neon-1', lap(40000, 'gold')).unlockedNow.map((i) => i.id)).toEqual(['magenta']);   // 3 points
+  expect(s.recordLap('neon-1', lap(39000, 'gold')).unlockedNow).toEqual([]);
+  expect(s.recordLap('neon-2', lap(40000, 'silver')).unlockedNow.map((i) => i.id)).toEqual(['pulse']);   // 5 points
+});

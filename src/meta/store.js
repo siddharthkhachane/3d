@@ -1,5 +1,6 @@
 import { MEDAL_POINTS, medalRank } from './medals.js';
 import { dailyDate } from './daily.js';
+import { newlyUnlocked } from './unlocks.js';
 
 const SAVE_KEY = 'neonTT.v1';
 const VERSION = 1;
@@ -50,6 +51,7 @@ export function createStore(storage) {
     },
     getMedal(id) { return data.tracks[id]?.medal ?? null; },
     recordLap(id, { timeMs, ghostCode, medal }) {
+      const pointsBefore = this.totalPoints();
       const t = data.tracks[id];
       if (!t) {
         data.tracks[id] = { bestMs: timeMs, ghost: ghostCode ?? null, medal: medal ?? null };
@@ -58,7 +60,7 @@ export function createStore(storage) {
         if (medalRank(medal) > medalRank(t.medal)) t.medal = medal;
       }
       persist();
-      return { unlockedNow: [] };
+      return { unlockedNow: newlyUnlocked(pointsBefore, this.totalPoints()) };
     },
     getSettings() { return { ...data.settings }; },
     setSettings(partial) {
